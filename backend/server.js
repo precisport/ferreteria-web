@@ -8,6 +8,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Servidor Ferretería funcionando 🚀");
+});
+
+
 /* ===============================
    SERVIR FRONTEND Y UPLOADS
 ================================ */
@@ -18,10 +23,11 @@ app.use("/uploads", express.static(path.join(__dirname, "../frontend/uploads")))
    CONEXIÓN MYSQL
 ================================ */
 const conexion = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "ferreteria"
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT
 });
 
 conexion.connect(err => {
@@ -329,6 +335,8 @@ app.delete("/eliminar-venta/:id", (req, res) => {
 /* ===============================
    SERVER
 ================================ */
-app.listen(3000, () => {
-  console.log("🚀 Servidor en http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor en puerto ${PORT}`);
 });
