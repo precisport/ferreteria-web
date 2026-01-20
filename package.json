@@ -1,7 +1,6 @@
 {
   "name": "ferreteria-web",
   "version": "1.0.0",
-  "description": "",
   "type": "commonjs",
   "scripts": {
     "start": "node backend/server.js"
