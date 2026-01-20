@@ -32,11 +32,12 @@ const conexion = mysql.createConnection({
 
 conexion.connect(err => {
   if (err) {
-    console.error("❌ Error MySQL:", err);
-  } else {
-    console.log("✅ Conectado a MySQL");
+    console.error("❌ Error MySQL:", err.message);
+    return;
   }
+  console.log("✅ Conectado a MySQL");
 });
+
 
 
 /* ===============================

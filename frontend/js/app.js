@@ -1,6 +1,9 @@
 /************ CONFIG ************/
 const IVA = 0.19;
 
+let productos = [];
+
+
 /************ USUARIOS ************/
 
 // 🔐 CARGA SESIÓN DESDE LOCALSTORAGE AL INICIAR
@@ -135,7 +138,7 @@ function mostrarProductos() {
     <div class="productos-grid">
       ${productos.map(p => `
         <div class="producto-card">
-          <img src="${p.imagen ? 'http://localhost:3000/uploads/' + p.imagen : 'http://localhost:3000/uploads/default.png'}">
+        <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
           <h3>${p.nombre}</h3>
           <p>${p.descripcion}</p>
           <p>Precio: $${p.precio.toLocaleString()}</p>
@@ -276,7 +279,7 @@ const total = subtotal + iva;
     <h2>Carrito</h2>
     ${carrito.map(p => `
       <div class="carrito-item">
-      <img src="${p.imagen ? 'http://localhost:3000/uploads/' + p.imagen : 'http://localhost:3000/uploads/default.png'}">
+      <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
 
         <div>
           <strong>${p.nombre}</strong><br>
@@ -507,7 +510,7 @@ function mostrarProductosCategoria(catId) {
         <h3>Productos de categoría</h3>
         ${lista.map(p => `
           <div class="producto-card">
-          <img src="/uploads/${p.imagen}">
+            <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
             <h4>${p.nombre}</h4>
             <p>${p.descripcion}</p>
             <p>Precio: $${p.precio.toLocaleString()}</p>
@@ -832,11 +835,9 @@ function eliminarVenta(id) {
 }
 
 /************ INICIAL ************/
-// Al cargar la aplicación mostramos la pantalla de inicio
 mostrarInicio();
-
-// Cargar productos desde el backend
 cargarProductos();
+
 
 /************ CONTADOR DEL CARRITO ************/
 function actualizarContador() {
