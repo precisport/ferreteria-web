@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ferretería-Web</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="header">
+  <!-- USUARIO ACTIVO (ESQUINA DERECHA) -->
+  <div id="usuarioHeader"></div>
+
+  <!-- TÍTULO CENTRADO -->
+  <h1 class="titulo">Ferretería-Web</h1>
+
+  <!-- MENÚ -->
+  <nav class="menu">
+    <button onclick="mostrarInicio()">Inicio</button>
+    <button onclick="mostrarProductos()">Productos</button>
+    <button onclick="mostrarCategorias()">Categorías</button>
+    <button onclick="mostrarClientes()">Clientes</button>
+    <button onclick="mostrarEmpleados()">Empleados</button>
+    <button onclick="mostrarVentas()">Ventas</button>
+    <button id="btnLogin" onclick="mostrarLogin()">Iniciar sesión</button>
+    <button onclick="mostrarCarrito()">🛒 Carrito (<span id="contadorCarrito">0</span>)</button>
+  </nav>
+</header>
+
+<!-- CONTENIDO PRINCIPAL -->
+<main id="contenido">
+
+  <h2>Agregar Producto</h2>
+
+  <form id="formProducto" enctype="multipart/form-data">
+
+    <input type="text" name="nombre" placeholder="Nombre del producto" required>
+
+    <input type="text" name="descripcion" placeholder="Descripción" required>
+
+    <input type="number" name="precio" placeholder="Precio" required>
+
+    <input type="number" name="stock" placeholder="Stock" required>
+
+    <select name="categoria" required>
+      <option value="">Seleccione categoría</option>
+      <option value="1">Herramientas</option>
+      <option value="2">Electricidad</option>
+    </select>
+
+    <!-- CAMPO CLAVE PARA MULTER -->
+    <input type="file" name="imagen" accept="image/*" required>
+
+    <button type="submit">Crear producto</button>
+
+  </form>
+
+</main>
+
+<footer class="footer">
+
+</footer>
+
+<!-- SCRIPT PRINCIPAL -->
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/app.js"></script>
+
+
+
+</body>
+</html>
