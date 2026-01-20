@@ -1,4 +1,5 @@
 const express = require("express");
+require("dotenv").config();
 const cors = require("cors");
 const multer = require("multer");
 const mysql = require("mysql2");
@@ -8,9 +9,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Servidor Ferretería funcionando 🚀");
-});
+// 👇 ESTO ES LO ÚNICO NECESARIO PARA EL FRONTEND
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 
 /* ===============================
@@ -33,10 +33,11 @@ const conexion = mysql.createConnection({
 conexion.connect(err => {
   if (err) {
     console.error("❌ Error MySQL:", err);
-    return;
+  } else {
+    console.log("✅ Conectado a MySQL");
   }
-  console.log("✅ Conectado a MySQL");
 });
+
 
 /* ===============================
    MULTER (SUBIDA DE IMÁGENES)
@@ -335,6 +336,7 @@ app.delete("/eliminar-venta/:id", (req, res) => {
 /* ===============================
    SERVER
 ================================ */
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
