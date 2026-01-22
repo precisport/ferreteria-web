@@ -96,14 +96,28 @@ actualizarHeaderUsuario();
 /************ PRODUCTOS ************/
 // Cargar productos desde el backend
 function cargarProductos() {
-fetch(`${API_URL}/productos`)
+  fetch(`${API_URL}/productos`)
     .then(res => res.json())
     .then(data => {
+
+      // 🔴 VALIDACIÓN CRÍTICA
+      if (!Array.isArray(data)) {
+        console.error("Respuesta inválida /productos:", data);
+        productos = [];
+        mostrarProductos();
+        return;
+      }
+
       productos = data;
       mostrarProductos();
     })
-    .catch(err => console.error("Error cargando productos:", err));
+    .catch(err => {
+      console.error("Error cargando productos:", err);
+      productos = [];
+      mostrarProductos();
+    });
 }
+
 function eliminarProductoAdmin(id) {
   if (!confirm("¿Eliminar producto?")) return;
 
@@ -133,6 +147,13 @@ function eliminarProductoAdmin(id) {
 
 
 function mostrarProductos() {
+
+  // 🔐 PROTECCIÓN CRÍTICA
+  if (!Array.isArray(productos)) {
+    console.warn("productos no es array, se corrige:", productos);
+    productos = [];
+  }
+
   document.getElementById("contenido").innerHTML = `
     <h2>Productos</h2>
     ${usuarioActivo && usuarioActivo.rol === "admin"
@@ -141,10 +162,10 @@ function mostrarProductos() {
     <div class="productos-grid">
       ${productos.map(p => `
         <div class="producto-card">
-        <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
+          <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
           <h3>${p.nombre}</h3>
           <p>${p.descripcion}</p>
-          <p>Precio: $${p.precio.toLocaleString()}</p>
+          <p>Precio: $${Number(p.precio).toLocaleString()}</p>
           <p>Stock: ${p.stock}</p>
           <p>Categoría: ${p.categoria}</p>
           <button onclick="agregarCarrito(${p.id_producto})">Agregar</button>
@@ -157,6 +178,7 @@ function mostrarProductos() {
     </div>
   `;
 }
+
 
 function agregarCarrito(id) {
   const prod = productos.find(p => p.id_producto === id);
@@ -406,32 +428,58 @@ fetch(`${API_URL}/ventas`)
 function mostrarEmpleados() {
   const esAdmin = usuarioActivo && usuarioActivo.rol === "admin";
 
-fetch(`${API_URL}/usuarios`)
+  fetch(`${API_URL}/usuarios`)
     .then(res => res.json())
     .then(data => {
+
+      // 🔴 VALIDACIÓN OBLIGATORIA
+      if (!Array.isArray(data)) {
+        console.error("Respuesta inválida /usuarios:", data);
+        document.getElementById("contenido").innerHTML =
+          "<p>Error cargando empleados</p>";
+        return;
+      }
+
       const empleados = data.filter(u => u.rol === "empleado");
 
       document.getElementById("contenido").innerHTML = `
         <h2>Empleados</h2>
         <p>Listado del personal de la ferretería</p>
 
-        ${esAdmin ? `
-          <h3>Agregar empleado</h3>
-          <input id="eNombre" placeholder="Nombre">
-          <input id="eEmail" placeholder="Email">
-          <input id="ePass" type="password" placeholder="Contraseña">
-          <button onclick="agregarEmpleado()">Crear empleado</button>
-          <hr>
-        ` : ""}
+        ${
+          esAdmin
+            ? `
+              <h3>Agregar empleado</h3>
+              <input id="eNombre" placeholder="Nombre">
+              <input id="eEmail" placeholder="Email">
+              <input id="ePass" type="password" placeholder="Contraseña">
+              <button onclick="agregarEmpleado()">Crear empleado</button>
+              <hr>
+            `
+            : ""
+        }
 
-        ${empleados.map(u => `
-          <div class="empleado-item">
-            <strong>${u.nombre}</strong><br>
-            Email: ${u.email}<br>
-            ${esAdmin ? `<button onclick="eliminarEmpleado(${u.id_usuario})">Eliminar</button>` : ""}
-          </div>
-        `).join("")}
+        ${
+          empleados.length === 0
+            ? "<p>No hay empleados registrados</p>"
+            : empleados.map(u => `
+                <div class="empleado-item">
+                  <strong>${u.nombre}</strong><br>
+                  Email: ${u.email}<br>
+                  ${
+                    esAdmin
+                      ? `<button onclick="eliminarEmpleado(${u.id_usuario})">Eliminar</button>`
+                      : ""
+                  }
+                </div>
+              `).join("")
+        }
       `;
+    })
+    .catch(err => {
+      console.error("Error cargando empleados:", err);
+      document.getElementById("contenido").innerHTML =
+        "<p>Error de servidor</p>";
     });
 }
 
@@ -474,7 +522,7 @@ fetch(`${API_URL}/crear-usuario`, {
 function eliminarEmpleado(id) {
   if (!confirm("¿Eliminar empleado?")) return;
 
-  fetch(`/eliminar-usuario/${id}`, {
+fetch(`${API_URL}/eliminar-usuario/${id}`, {
     method: "DELETE"
   })
     .then(res => res.json())
@@ -506,29 +554,49 @@ fetch(`${API_URL}/categorias`)
 }
 
 function mostrarProductosCategoria(catId) {
-fetch(`${API_URL}/productos`)
+  fetch(`${API_URL}/productos`)
     .then(res => res.json())
     .then(data => {
+
+      // 🔐 VALIDACIÓN CRÍTICA
+      if (!Array.isArray(data)) {
+        console.error("Respuesta inválida /productos:", data);
+        document.getElementById("listaCategoria").innerHTML =
+          "<p>Error cargando productos</p>";
+        return;
+      }
+
       const lista = data.filter(p => p.id_categoria === catId);
+
       document.getElementById("listaCategoria").innerHTML = `
         <h3>Productos de categoría</h3>
-        ${lista.map(p => `
-          <div class="producto-card">
-            <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
-            <h4>${p.nombre}</h4>
-            <p>${p.descripcion}</p>
-            <p>Precio: $${p.precio.toLocaleString()}</p>
-            <p>Stock: ${p.stock}</p>
-            <button onclick="agregarCarrito(${p.id_producto})">Agregar</button>
-            ${usuarioActivo && usuarioActivo.rol === "admin"
-              ? `<button onclick="mostrarEditarProducto(${p.id_producto})">Editar</button>
-                 <button onclick="eliminarProductoAdmin(${p.id_producto})">Eliminar</button>`
-              : ""}
-          </div>
-        `).join("")}
+        ${
+          lista.length === 0
+            ? "<p>No hay productos en esta categoría</p>"
+            : lista.map(p => `
+                <div class="producto-card">
+                  <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
+                  <h4>${p.nombre}</h4>
+                  <p>${p.descripcion}</p>
+                  <p>Precio: $${Number(p.precio).toLocaleString()}</p>
+                  <p>Stock: ${p.stock}</p>
+                  <button onclick="agregarCarrito(${p.id_producto})">Agregar</button>
+                  ${usuarioActivo && usuarioActivo.rol === "admin"
+                    ? `<button onclick="mostrarEditarProducto(${p.id_producto})">Editar</button>
+                       <button onclick="eliminarProductoAdmin(${p.id_producto})">Eliminar</button>`
+                    : ""}
+                </div>
+              `).join("")
+        }
       `;
+    })
+    .catch(err => {
+      console.error("Error productos por categoría:", err);
+      document.getElementById("listaCategoria").innerHTML =
+        "<p>Error de servidor</p>";
     });
 }
+
 /************ CLIENTES ************/
 function mostrarRegistroCliente() {
   document.getElementById("contenido").innerHTML = `
@@ -567,7 +635,7 @@ fetch(`${API_URL}/crear-usuario`, {
 function eliminarCliente(id) {
   if (!confirm("¿Eliminar cliente?")) return;
 
-  fetch(`/eliminar-usuario/${id}`, {
+fetch(`${API_URL}/eliminar-usuario/${id}`, {
     method: "DELETE"
   })
     .then(res => res.json())
@@ -590,155 +658,74 @@ function eliminarCliente(id) {
 function mostrarClientes() {
   const esAdmin = usuarioActivo && usuarioActivo.rol === "admin";
 
-fetch(`${API_URL}/usuarios`)
+  fetch(`${API_URL}/usuarios`)
     .then(res => res.json())
     .then(data => {
+
+      // 🔴 VALIDACIÓN CRÍTICA
+      if (!Array.isArray(data)) {
+        console.error("Respuesta inválida /usuarios:", data);
+        document.getElementById("contenido").innerHTML =
+          "<p>Error cargando clientes</p>";
+        return;
+      }
+
       const clientes = data.filter(u => u.rol === "cliente");
 
       document.getElementById("contenido").innerHTML = `
         <h2>Clientes</h2>
         <p>Registro de nuevos clientes</p>
 
-        ${esAdmin ? `<button onclick="mostrarRegistroCliente()">Crear perfil</button>` : ""}
+        ${
+          esAdmin
+            ? `<button onclick="mostrarRegistroCliente()">Crear perfil</button>`
+            : ""
+        }
 
         <div id="listaClientes">
-          ${clientes.map(c => `
-            <div class="cliente-item">
-              <strong>${c.nombre}</strong><br>
-              Email: ${c.email}<br>
+          ${
+            clientes.length === 0
+              ? "<p>No hay clientes registrados</p>"
+              : clientes.map(c => `
+                  <div class="cliente-item">
+                    <strong>${c.nombre}</strong><br>
+                    Email: ${c.email}<br>
 
-              ${(esAdmin || usuarioActivo?.email === c.email)
-                ? `<button onclick="eliminarCliente(${c.id_usuario})">Eliminar</button>`
-                : ""
-              }
-            </div>
-          `).join("")}
+                    ${
+                      esAdmin || usuarioActivo?.email === c.email
+                        ? `<button onclick="eliminarCliente(${c.id_usuario})">Eliminar</button>`
+                        : ""
+                    }
+                  </div>
+                `).join("")
+          }
         </div>
       `;
     })
     .catch(err => {
       console.error("Error cargando clientes:", err);
+      document.getElementById("contenido").innerHTML =
+        "<p>Error de servidor</p>";
     });
 }
-
-
-function verBoleta(id) {
-  
-}
-
-function generarBoletaPDF(idVenta) {
-fetch(`${API_URL}/venta/${idVenta}`)
-    .then(res => res.json())
-    .then(data => {
-
-      console.log("📦 Datos boleta:", data);
-
-      if (!data.length) {
-        alert("No hay datos para esta boleta");
-        return;
-      }
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({
-        unit: "mm",
-        format: [80, 220]
-      });
-
-      let y = 10;
-      const venta = data[0];
-
-      // ENCABEZADO
-      doc.setFontSize(10);
-      doc.text("FERRETERÍA WEB SPA", 40, y, { align: "center" });
-      y += 5;
-      doc.text("VÁLIDO COMO BOLETA", 40, y, { align: "center" });
-      y += 6;
-
-      doc.setFontSize(8);
-      doc.text("Dirección Comercial #1234", 40, y, { align: "center" });
-      y += 4;
-      doc.text("Paine, Santiago", 40, y, { align: "center" });
-      y += 5;
-
-      doc.text("---------------------------------------", 40, y, { align: "center" });
-      y += 5;
-
-      doc.text(`Boleta N°: ${venta.id_venta}`, 5, y);
-      y += 4;
-      doc.text(`Fecha: ${new Date(venta.fecha).toLocaleString()}`, 5, y);
-      y += 5;
-
-      doc.text("---------------------------------------", 40, y, { align: "center" });
-      y += 5;
-
-      // 🔥 DETALLE DE COMPRA (ESTA ERA LA PARTE QUE FALTABA)
-      doc.setFontSize(9);
-      doc.text("DETALLE DE COMPRA", 40, y, { align: "center" });
-      y += 5;
-
-      doc.setFontSize(8);
-      data.forEach(p => {
-        doc.text(
-          `${p.producto} x${p.cantidad}  $${Number(p.subtotal).toLocaleString()}`,
-          5,
-          y
-        );
-        y += 4;
-      });
-
-      y += 3;
-      doc.text("---------------------------------------", 40, y, { align: "center" });
-      y += 5;
-
-      doc.setFontSize(9);
-      doc.text(`TOTAL: $${Number(venta.total).toLocaleString()}`, 5, y);
-      y += 6;
-
-      // 🚚 DESPACHO (solo si existe)
-      if (venta.d_nombre) {
-        doc.text("---------------------------------------", 40, y, { align: "center" });
-        y += 5;
-
-        doc.setFontSize(9);
-        doc.text("DESPACHO", 40, y, { align: "center" });
-        y += 5;
-
-        doc.setFontSize(8);
-        doc.text(`${venta.d_nombre} ${venta.d_apellido}`, 5, y); y += 4;
-        doc.text(venta.direccion, 5, y); y += 4;
-        doc.text(`${venta.comuna} Nº${venta.numero}`, 5, y); y += 4;
-        doc.text(`Tel: ${venta.telefono}`, 5, y); y += 5;
-      }
-
-      doc.text("---------------------------------------", 40, y, { align: "center" });
-      y += 5;
-
-      doc.text("IVA INCLUIDO", 40, y, { align: "center" });
-      y += 4;
-      doc.text("GRACIAS POR SU COMPRA", 40, y, { align: "center" });
-      y += 5;
-
-      doc.text(`BOLETA-${venta.id_venta}-1`, 40, y, { align: "center" });
-
-      doc.save(`boleta-${venta.id_venta}.pdf`);
-    })
-    .catch(err => {
-      console.error("❌ Error generando boleta:", err);
-    });
-}
-
 
 
 /************ VENTAS ************/
 function mostrarVentas() {
-fetch(`${API_URL}/ventas`)
+  fetch(`${API_URL}/ventas`)
     .then(res => res.json())
     .then(data => {
 
       const contenedor = document.getElementById("contenido");
-      contenedor.innerHTML = "";
 
-      if (!data.length) {
+      // 🔴 VALIDACIÓN CRÍTICA
+      if (!Array.isArray(data)) {
+        console.error("Respuesta inválida /ventas:", data);
+        contenedor.innerHTML = "<p>Error cargando ventas</p>";
+        return;
+      }
+
+      if (data.length === 0) {
         contenedor.innerHTML = `
           <h2>Ventas</h2>
           <p>No hay ventas registradas.</p>
@@ -752,16 +739,11 @@ fetch(`${API_URL}/ventas`)
           <div class="venta-item">
             <strong>Boleta #${v.id_venta}</strong><br>
             Fecha: ${new Date(v.fecha).toLocaleString()}<br>
-            Cliente ID: ${v.id_cliente}<br>
+            Cliente ID: ${v.id_cliente ?? "-"}<br>
             Total: $${Number(v.total).toLocaleString()}<br><br>
 
-            <button onclick="verBoleta(${v.id_venta})">
-              Ver boleta
-            </button>
-
-            <button onclick="generarBoletaPDF(${v.id_venta})">
-              Ver PDF
-            </button>
+            <button onclick="verBoleta(${v.id_venta})">Ver boleta</button>
+            <button onclick="generarBoletaPDF(${v.id_venta})">Ver PDF</button>
 
             ${
               usuarioActivo && usuarioActivo.rol === "admin"
@@ -774,39 +756,12 @@ fetch(`${API_URL}/ventas`)
     })
     .catch(err => {
       console.error("❌ Error cargando ventas:", err);
-      alert("Error al cargar ventas");
+      document.getElementById("contenido").innerHTML =
+        "<p>Error de servidor</p>";
     });
 }
 
 
-
-/************ VER BOLETA ************/
-function verBoleta(id) {
-  fetch("/ventas")
-    .then(res => res.json())
-    .then(data => {
-      const v = data.find(x => x.id_venta === id);
-      if (!v) {
-        alert("Boleta no encontrada");
-        return;
-      }
-
-      const codigoBarra = "BOLETA-" + v.id_venta + "-" + v.id_cliente;
-
-      document.getElementById("contenido").innerHTML = `
-        <h2>Boleta #${v.id_venta}</h2>
-        <p><strong>Fecha:</strong> ${new Date(v.fecha).toLocaleString()}</p>
-        <p><strong>ID Cliente:</strong> ${v.id_cliente}</p>
-        <h3>Total: $${Number(v.total).toLocaleString()}</h3>
-        <p><strong>Código de barra:</strong> ${codigoBarra}</p>
-        <button onclick="mostrarVentas()">Volver</button>
-      `;
-    })
-    .catch(err => {
-      console.error("Error al ver boleta:", err);
-      alert("Error al cargar boleta");
-    });
-}
 
 
 /************ ELIMINAR VENTA ************/
@@ -846,12 +801,12 @@ cargarProductos();
 /************ CONTADOR DEL CARRITO ************/
 function actualizarContador() {
   const totalItems = carrito.reduce((a, p) => a + p.cantidad, 0);
-  document.getElementById("contadorCarrito").innerText = `Carrito (${totalItems})`;
+document.getElementById("contadorCarrito").innerText = totalItems;
 }
 
 function generarBoletaPDF(idVenta) {
-  fetch(`/venta/${idVenta}`)
-    .then(res => res.json())
+fetch(`${API_URL}/venta/${idVenta}`)
+    .then(res => res.json())  
     .then(data => {
 
       console.log("📦 Datos boleta:", data);

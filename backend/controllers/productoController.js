@@ -1,50 +1,55 @@
 const db = require("../config/db");
 
 // OBTENER PRODUCTOS
-exports.obtenerProductos = (req, res) => {
-  db.query("SELECT * FROM producto", (err, rows) => {
-    if (err) return res.status(500).json(err);
+exports.obtenerProductos = async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM producto");
     res.json(rows);
-  });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json([]);
+  }
 };
 
-// CREAR PRODUCTO (ADMIN)
-exports.crearProducto = (req, res) => {
-  const { nombre, descripcion, precio, imagen } = req.body;
+// CREAR PRODUCTO
+exports.crearProducto = async (req, res) => {
+  try {
+    const { nombre, descripcion, precio, imagen } = req.body;
 
-  db.query(
-    "INSERT INTO producto (nombre, descripcion, precio, imagen) VALUES (?,?,?,?)",
-    [nombre, descripcion, precio, imagen],
-    (err, result) => {
-      if (err) return res.status(500).json(err);
-      res.json({ id: result.insertId });
-    }
-  );
+    const [result] = await db.query(
+      "INSERT INTO producto (nombre, descripcion, precio, imagen) VALUES (?,?,?,?)",
+      [nombre, descripcion, precio, imagen]
+    );
+
+    res.json({ id: result.insertId });
+  } catch (err) {
+    res.status(500).json({ error: "Error al crear producto" });
+  }
 };
 
 // EDITAR PRODUCTO
-exports.editarProducto = (req, res) => {
-  const { id } = req.params;
-  const { nombre, descripcion, precio, imagen } = req.body;
+exports.editarProducto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, descripcion, precio, imagen } = req.body;
 
-  db.query(
-    "UPDATE producto SET nombre=?, descripcion=?, precio=?, imagen=? WHERE id=?",
-    [nombre, descripcion, precio, imagen, id],
-    err => {
-      if (err) return res.status(500).json(err);
-      res.json({ ok: true });
-    }
-  );
+    await db.query(
+      "UPDATE producto SET nombre=?, descripcion=?, precio=?, imagen=? WHERE id_producto=?",
+      [nombre, descripcion, precio, imagen, id]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Error al editar producto" });
+  }
 };
 
 // ELIMINAR PRODUCTO
-exports.eliminarProducto = (req, res) => {
-  db.query(
-    "DELETE FROM producto WHERE id=?",
-    [req.params.id],
-    err => {
-      if (err) return res.status(500).json(err);
-      res.json({ ok: true });
-    }
-  );
+exports.eliminarProducto = async (req, res) => {
+  try {
+    await db.query("DELETE FROM producto WHERE id_producto=?", [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Error al eliminar producto" });
+  }
 };
