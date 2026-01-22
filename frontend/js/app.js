@@ -41,34 +41,50 @@ function mostrarInicio() {
   `;
 }
 
+
+
+
 /************ LOGIN ************/
 function mostrarLogin() {
   document.getElementById("contenido").innerHTML = `
     <h2>Iniciar sesión</h2>
-    <input id="email" placeholder="Email">
+
+    <input id="email" type="email" placeholder="Email">
     <input id="password" type="password" placeholder="Contraseña">
+
     <button onclick="login()">Ingresar</button>
+    <button onclick="mostrarRegistroCliente()">Registrarse</button>
   `;
 }
 
 function login() {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-fetch(`${API_URL}/usuarios`)
+  if (!email || !password) {
+    alert("Complete todos los campos");
+    return;
+  }
+
+  fetch(`${API_URL}/usuarios`)
     .then(res => res.json())
-    .then(data => {
-      const u = data.find(
-        x => x.email === email && x.password === pass
+    .then(usuarios => {
+      if (!Array.isArray(usuarios)) {
+        alert("Error de servidor");
+        return;
+      }
+
+      const usuario = usuarios.find(
+        u => u.email === email && u.password === password
       );
 
-      if (!u) {
+      if (!usuario) {
         alert("Credenciales incorrectas");
         return;
       }
 
       // ✅ GUARDAR SESIÓN
-      usuarioActivo = u;
+      usuarioActivo = usuario;
       localStorage.setItem("usuarioActivo", JSON.stringify(usuarioActivo));
 
       actualizarHeaderUsuario();
@@ -76,7 +92,7 @@ fetch(`${API_URL}/usuarios`)
     })
     .catch(err => {
       console.error(err);
-      alert("Error de servidor");
+      alert("Error al iniciar sesión");
     });
 }
 
@@ -84,14 +100,18 @@ fetch(`${API_URL}/usuarios`)
 function cerrarSesion() {
   localStorage.removeItem("usuarioActivo");
   usuarioActivo = null;
+
   carrito = [];
   actualizarContador();
+
   actualizarHeaderUsuario();
   mostrarInicio();
 }
 
-/************ AL CARGAR LA PÁGINA ************/
+/************ INICIAL ************/
 actualizarHeaderUsuario();
+
+
 
 /************ PRODUCTOS ************/
 // Cargar productos desde el backend
@@ -162,7 +182,8 @@ function mostrarProductos() {
     <div class="productos-grid">
       ${productos.map(p => `
         <div class="producto-card">
-          <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
+         <img src="${p.imagen || 'https://via.placeholder.com/200'}">
+
           <h3>${p.nombre}</h3>
           <p>${p.descripcion}</p>
           <p>Precio: $${Number(p.precio).toLocaleString()}</p>
@@ -205,7 +226,10 @@ fetch(`${API_URL}/categorias`)
           <select id="pCategoria" name="categoria">
             ${cats.map(c=>`<option value="${c.id_categoria}">${c.nombre}</option>`).join("")}
           </select>
-          <input id="pImagen" name="imagen" type="file" accept="image/*">
+<input
+  id="pImagen"
+  name="imagen"
+  placeholder="URL de la imagen (https://...)">
           <button type="button" onclick="crearProducto()">Crear</button>
           <button type="button" onclick="mostrarProductos()">Volver</button>
         </form>
@@ -214,14 +238,22 @@ fetch(`${API_URL}/categorias`)
 }
 
 function crearProducto() {
-  const form = document.getElementById("formProducto");
-  const formData = new FormData(form);
+  const data = {
+    nombre: document.getElementById("pNombre").value,
+    descripcion: document.getElementById("pDescripcion").value,
+    precio: document.getElementById("pPrecio").value,
+    stock: document.getElementById("pStock").value,
+    categoria: document.getElementById("pCategoria").value,
+    imagen: document.getElementById("pImagen").value // 👈 URL
+  };
 
   fetch(`${API_URL}/crear-producto`, {
-  method: "POST",
-  body: formData
-})
-
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  })
     .then(res => res.json())
     .then(resp => {
       if (!resp.ok) {
@@ -230,8 +262,6 @@ function crearProducto() {
       }
 
       alert("Producto agregado correctamente");
-
-      // 🔥 SOLUCIÓN REAL: volver a cargar desde la BD
       cargarProductos();
     })
     .catch(err => {
@@ -245,35 +275,58 @@ function crearProducto() {
 /************ ADMIN: EDITAR PRODUCTO ************/
 function mostrarEditarProducto(id) {
   const p = productos.find(x => x.id_producto === id);
+
   document.getElementById("contenido").innerHTML = `
     <h2>Editar Producto</h2>
-    <form id="formEditar" enctype="multipart/form-data">
-      <input name="nombre" value="${p.nombre}">
-      <input name="descripcion" value="${p.descripcion}">
-      <input name="precio" type="number" value="${p.precio}">
-      <input name="stock" type="number" value="${p.stock}">
+
+    <form id="formEditar">
+      <input name="nombre" value="${p.nombre}" placeholder="Nombre">
+
+      <input name="descripcion" value="${p.descripcion}" placeholder="Descripción">
+
+      <input name="precio" type="number" value="${p.precio}" placeholder="Precio">
+
+      <input name="stock" type="number" value="${p.stock}" placeholder="Stock">
+
       <select name="categoria">
         <option value="${p.id_categoria}" selected>${p.categoria}</option>
       </select>
-      <input name="imagen" type="file" accept="image/*">
-      <button type="button" onclick="guardarEdicion(${p.id_producto})">Guardar</button>
-      <button type="button" onclick="mostrarProductos()">Cancelar</button>
+
+      <input
+        name="imagen"
+        value="${p.imagen || ''}"
+        placeholder="URL de la imagen (https://...)">
+
+      <button type="button" onclick="guardarEdicion(${p.id_producto})">
+        Guardar
+      </button>
+
+      <button type="button" onclick="mostrarProductos()">
+        Cancelar
+      </button>
     </form>
   `;
 }
 
-function guardarEdicion(id) {
-  const form = document.getElementById("formEditar");
-  const datos = new FormData(form);
 
-fetch(`${API_URL}/actualizar-producto/${id}`, {
+function guardarEdicion(id) {
+  const data = {
+    nombre: document.querySelector('#formEditar [name="nombre"]').value,
+    descripcion: document.querySelector('#formEditar [name="descripcion"]').value,
+    precio: document.querySelector('#formEditar [name="precio"]').value,
+    stock: document.querySelector('#formEditar [name="stock"]').value,
+    categoria: document.querySelector('#formEditar [name="categoria"]').value,
+    imagen: document.querySelector('#formEditar [name="imagen"]').value // URL
+  };
+
+  fetch(`${API_URL}/actualizar-producto/${id}`, {
     method: "PUT",
-    body: datos
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
   })
-    .then(res => {
-      if (!res.ok) throw new Error("Error servidor");
-      return res.json();
-    })
+    .then(res => res.json())
     .then(resp => {
       if (!resp.ok) {
         alert("No se pudo actualizar el producto");
@@ -281,13 +334,14 @@ fetch(`${API_URL}/actualizar-producto/${id}`, {
       }
 
       alert("Producto actualizado correctamente");
-      cargarProductos(); // 🔁 recarga REAL desde BD
+      cargarProductos();
     })
     .catch(err => {
       console.error("Error al actualizar producto:", err);
       alert("Error al actualizar el producto");
     });
 }
+
 
 
 
@@ -305,7 +359,7 @@ const total = subtotal + iva;
     <h2>Carrito</h2>
     ${carrito.map(p => `
       <div class="carrito-item">
-      <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
+<img src="${p.imagen || 'https://via.placeholder.com/100'}">
 
         <div>
           <strong>${p.nombre}</strong><br>
@@ -575,7 +629,7 @@ function mostrarProductosCategoria(catId) {
             ? "<p>No hay productos en esta categoría</p>"
             : lista.map(p => `
                 <div class="producto-card">
-                  <img src="${p.imagen ? '/uploads/' + p.imagen : '/uploads/default.png'}">
+<img src="${p.imagen || 'https://via.placeholder.com/200'}">
                   <h4>${p.nombre}</h4>
                   <p>${p.descripcion}</p>
                   <p>Precio: $${Number(p.precio).toLocaleString()}</p>
@@ -805,14 +859,26 @@ document.getElementById("contadorCarrito").innerText = totalItems;
 }
 
 function generarBoletaPDF(idVenta) {
-fetch(`${API_URL}/venta/${idVenta}`)
-    .then(res => res.json())  
+  fetch(`${API_URL}/ventas`)
+    .then(res => res.json())
     .then(data => {
 
-      console.log("📦 Datos boleta:", data);
+      console.log("📦 Ventas recibidas:", data);
 
-      if (!data.length) {
-        alert("No hay datos para esta boleta");
+      if (!Array.isArray(data)) {
+        alert("Error obteniendo ventas");
+        return;
+      }
+
+      const venta = data.find(v => v.id_venta === idVenta);
+
+      if (!venta) {
+        alert("Boleta no encontrada");
+        return;
+      }
+
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("jsPDF no está cargado");
         return;
       }
 
@@ -823,14 +889,8 @@ fetch(`${API_URL}/venta/${idVenta}`)
       });
 
       let y = 10;
-      const venta = data[0]; // datos generales
 
-      /* ================= CÁLCULOS IVA ================= */
-      const total = Number(venta.total);
-      const iva = Math.round(total * 0.19 / 1.19); // IVA incluido
-      const neto = total - iva;
-
-      /* ================= HEADER ================= */
+      /* ===== HEADER ===== */
       doc.setFontSize(10);
       doc.text("FERRETERÍA WEB SPA", 40, y, { align: "center" });
       y += 5;
@@ -838,81 +898,33 @@ fetch(`${API_URL}/venta/${idVenta}`)
       y += 6;
 
       doc.setFontSize(8);
-      doc.text("Dirección Comercial #1234", 40, y, { align: "center" });
-      y += 4;
-      doc.text("Paine, Santiago", 40, y, { align: "center" });
-      y += 6;
+      doc.text("------------------------------------------", 40, y, { align: "center" });
+      y += 5;
+
+      doc.text(`Boleta N°: ${venta.id_venta}`, 10, y); y += 4;
+      doc.text(`Fecha: ${new Date(venta.fecha).toLocaleString()}`, 10, y); y += 4;
+      doc.text(`Cliente ID: ${venta.id_cliente ?? "N/A"}`, 10, y); y += 5;
 
       doc.text("------------------------------------------", 40, y, { align: "center" });
       y += 5;
 
-      doc.text(`Boleta N°: ${venta.id_venta}`, 10, y);
-      y += 4;
-      doc.text(`Fecha: ${new Date(venta.fecha).toLocaleString()}`, 10, y);
-      y += 5;
+      /* ===== TOTAL ===== */
+      const total = Number(venta.total);
+      const iva = Math.round(total * 0.19 / 1.19);
+      const neto = total - iva;
 
-      doc.text("------------------------------------------", 40, y, { align: "center" });
-      y += 5;
-
-      /* ================= DETALLE COMPRA ================= */
-      doc.setFontSize(9);
-      doc.text("DETALLE DE COMPRA", 40, y, { align: "center" });
-      y += 5;
-
-      doc.setFontSize(8);
-      data.forEach(p => {
-        doc.text(`${p.producto} x${p.cantidad}`, 10, y);
-        doc.text(
-          `$${Number(p.subtotal).toLocaleString()}`,
-          70,
-          y,
-          { align: "right" }
-        );
-        y += 4;
-      });
-
-      y += 3;
-      doc.text("------------------------------------------", 40, y, { align: "center" });
-      y += 5;
-
-      /* ================= TOTALES ================= */
-      doc.setFontSize(8);
-      doc.text(`NETO: $${neto.toLocaleString()}`, 10, y);
-      y += 4;
-
-      doc.text(`IVA (19%): $${iva.toLocaleString()}`, 10, y);
-      y += 4;
+      doc.text(`NETO: $${neto.toLocaleString()}`, 10, y); y += 4;
+      doc.text(`IVA (19%): $${iva.toLocaleString()}`, 10, y); y += 4;
 
       doc.setFontSize(9);
       doc.text(`TOTAL: $${total.toLocaleString()}`, 10, y);
       y += 6;
 
-      /* ================= DESPACHO ================= */
-      if (venta.d_nombre) {
-        doc.text("------------------------------------------", 40, y, { align: "center" });
-        y += 5;
-
-        doc.text("DESPACHO", 40, y, { align: "center" });
-        y += 5;
-
-        doc.setFontSize(8);
-        doc.text(`${venta.d_nombre} ${venta.d_apellido}`, 10, y); y += 4;
-        doc.text(venta.direccion, 10, y); y += 4;
-        doc.text(`${venta.comuna} Nº ${venta.numero}`, 10, y); y += 4;
-        doc.text(`Tel: ${venta.telefono}`, 10, y); y += 5;
-      }
-
-      /* ================= FOOTER ================= */
       doc.text("------------------------------------------", 40, y, { align: "center" });
       y += 5;
 
       doc.setFontSize(8);
-      doc.text("IVA INCLUIDO", 40, y, { align: "center" });
-      y += 4;
       doc.text("GRACIAS POR SU COMPRA", 40, y, { align: "center" });
-      y += 5;
-
-      doc.text(`BOLETA-${venta.id_venta}`, 40, y, { align: "center" });
 
       doc.save(`boleta_${venta.id_venta}.pdf`);
     })
