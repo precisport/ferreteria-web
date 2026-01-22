@@ -1,5 +1,7 @@
 /************ CONFIG ************/
+const API_URL = window.location.origin; // 👈 AGREGAR ESTA LÍNEA
 const IVA = 0.19;
+
 
 let productos = [];
 
@@ -53,7 +55,7 @@ function login() {
   const email = document.getElementById("email").value;
   const pass = document.getElementById("password").value;
 
-  fetch("/usuarios")
+fetch(`${API_URL}/usuarios`)
     .then(res => res.json())
     .then(data => {
       const u = data.find(
@@ -94,7 +96,7 @@ actualizarHeaderUsuario();
 /************ PRODUCTOS ************/
 // Cargar productos desde el backend
 function cargarProductos() {
-  fetch("/productos")
+fetch(`${API_URL}/productos`)
     .then(res => res.json())
     .then(data => {
       productos = data;
@@ -105,9 +107,10 @@ function cargarProductos() {
 function eliminarProductoAdmin(id) {
   if (!confirm("¿Eliminar producto?")) return;
 
-  fetch(`/eliminar-producto/${id}`, {
-    method: "DELETE"
-  })
+  fetch(`${API_URL}/eliminar-producto/${id}`, {
+  method: "DELETE"
+})
+
     .then(res => {
       if (!res.ok) throw new Error("Error servidor");
       return res.json();
@@ -167,7 +170,7 @@ function agregarCarrito(id) {
 
 /************ ADMIN: AGREGAR PRODUCTO ************/
 function mostrarAdminProductos() {
-  fetch("/categorias")
+fetch(`${API_URL}/categorias`)
     .then(res => res.json())
     .then(cats => {
       document.getElementById("contenido").innerHTML = `
@@ -192,10 +195,11 @@ function crearProducto() {
   const form = document.getElementById("formProducto");
   const formData = new FormData(form);
 
-  fetch("/crear-producto", {
-    method: "POST",
-    body: formData
-  })
+  fetch(`${API_URL}/crear-producto`, {
+  method: "POST",
+  body: formData
+})
+
     .then(res => res.json())
     .then(resp => {
       if (!resp.ok) {
@@ -240,7 +244,7 @@ function guardarEdicion(id) {
   const form = document.getElementById("formEditar");
   const datos = new FormData(form);
 
-  fetch(`/actualizar-producto/${id}`, {
+fetch(`${API_URL}/actualizar-producto/${id}`, {
     method: "PUT",
     body: datos
   })
@@ -346,7 +350,7 @@ function finalizarCompra() {
 
   const total = carrito.reduce((a, p) => a + p.precio * p.cantidad, 0);
 
-  fetch("/crear-venta", {
+fetch(`${API_URL}/crear-venta`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -371,7 +375,7 @@ function finalizarCompra() {
 
 /************ BOLETA ************/
 function verBoleta(id) {
-  fetch("/ventas")
+fetch(`${API_URL}/ventas`)
     .then(r => r.json())
     .then(data => {
       const v = data.find(x => x.id_venta === id);
@@ -402,7 +406,7 @@ function verBoleta(id) {
 function mostrarEmpleados() {
   const esAdmin = usuarioActivo && usuarioActivo.rol === "admin";
 
-  fetch("/usuarios") // ruta que devuelve todos los usuarios
+fetch(`${API_URL}/usuarios`)
     .then(res => res.json())
     .then(data => {
       const empleados = data.filter(u => u.rol === "empleado");
@@ -441,7 +445,7 @@ function agregarEmpleado() {
     return;
   }
 
-  fetch("/crear-usuario", {
+fetch(`${API_URL}/crear-usuario`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -488,7 +492,7 @@ function eliminarEmpleado(id) {
 
 /************ CATEGORÍAS ************/
 function mostrarCategorias() {
-  fetch("/categorias")
+fetch(`${API_URL}/categorias`)
     .then(res => res.json())
     .then(cats => {
       document.getElementById("contenido").innerHTML = `
@@ -502,7 +506,7 @@ function mostrarCategorias() {
 }
 
 function mostrarProductosCategoria(catId) {
-  fetch("/productos")
+fetch(`${API_URL}/productos`)
     .then(res => res.json())
     .then(data => {
       const lista = data.filter(p => p.id_categoria === catId);
@@ -545,7 +549,7 @@ function registrarCliente() {
     rol: "cliente"
   };
 
-  fetch("/crear-usuario", {
+fetch(`${API_URL}/crear-usuario`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(nuevoCliente)
@@ -586,7 +590,7 @@ function eliminarCliente(id) {
 function mostrarClientes() {
   const esAdmin = usuarioActivo && usuarioActivo.rol === "admin";
 
-  fetch("/usuarios")
+fetch(`${API_URL}/usuarios`)
     .then(res => res.json())
     .then(data => {
       const clientes = data.filter(u => u.rol === "cliente");
@@ -623,7 +627,7 @@ function verBoleta(id) {
 }
 
 function generarBoletaPDF(idVenta) {
-  fetch(`/venta/${idVenta}`)
+fetch(`${API_URL}/venta/${idVenta}`)
     .then(res => res.json())
     .then(data => {
 
@@ -727,7 +731,7 @@ function generarBoletaPDF(idVenta) {
 
 /************ VENTAS ************/
 function mostrarVentas() {
-  fetch("/ventas")
+fetch(`${API_URL}/ventas`)
     .then(res => res.json())
     .then(data => {
 
@@ -809,7 +813,7 @@ function verBoleta(id) {
 function eliminarVenta(id) {
   if (!confirm("¿Eliminar boleta?")) return;
 
-  fetch("/eliminar-venta/" + id, {
+fetch(`${API_URL}/eliminar-venta/${id}`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
