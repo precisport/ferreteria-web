@@ -142,6 +142,10 @@ app.post("/crear-venta", async (req, res) => {
   try {
     const { id_usuario, total, productos, despacho } = req.body;
 
+    if (!id_usuario || !total || !Array.isArray(productos)) {
+      return res.status(400).json({ error: "Datos incompletos" });
+    }
+
     const [venta] = await db.query(
       "INSERT INTO venta (id_cliente,total) VALUES (?,?)",
       [id_usuario, total]
@@ -154,30 +158,36 @@ app.post("/crear-venta", async (req, res) => {
       );
     }
 
-if (despacho) {
-  await db.query(
-    `INSERT INTO despacho 
-     (id_venta,nombre,apellido,direccion,comuna,numero,telefono)
-     VALUES (?,?,?,?,?,?,?)`,
-    [
-      venta.insertId,
-      despacho.nombre,
-      despacho.apellido,
-      despacho.direccion,
-      despacho.comuna,
-      despacho.numero,
-      despacho.telefono
-    ]
-  );
-}
-
+    // ✅ DESPACHO OBLIGATORIO
+    if (
+      despacho &&
+      despacho.nombre &&
+      despacho.direccion &&
+      despacho.comuna
+    ) {
+      await db.query(
+        `INSERT INTO despacho
+         (id_venta,nombre,apellido,direccion,comuna,numero,telefono)
+         VALUES (?,?,?,?,?,?,?)`,
+        [
+          venta.insertId,
+          despacho.nombre,
+          despacho.apellido || "",
+          despacho.direccion,
+          despacho.comuna,
+          despacho.numero || "",
+          despacho.telefono || ""
+        ]
+      );
+    }
 
     res.json({ id_venta: venta.insertId });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({});
+    console.error("❌ Error crear venta:", err);
+    res.status(500).json({ error: "Error creando venta" });
   }
 });
+
 
 app.get("/ventas", async (req, res) => {
   const [rows] = await db.query(`

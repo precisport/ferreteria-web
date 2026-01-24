@@ -415,7 +415,7 @@ function finalizarCompra() {
     return;
   }
 
-  // 🔴 VALIDACIÓN OBLIGATORIA (ESTO FALTABA)
+  // ✅ VALIDACIÓN OBLIGATORIA
   if (!dNombre.value || !dDireccion.value || !dComuna.value) {
     alert("Debe completar los datos de despacho");
     return;
