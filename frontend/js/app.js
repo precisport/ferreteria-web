@@ -1,5 +1,6 @@
 /************ CONFIG ************/
-const API_URL = window.location.origin; // 👈 AGREGAR ESTA LÍNEA
+const API_URL = "https://ferreteria-web-production.up.railway.app";
+
 const IVA = 0.19;
 
 
@@ -504,6 +505,13 @@ function verBoleta(id) {
       }
 
       const v = data[0];
+      const venta = data[0];
+const productos = data.map(p => ({
+  producto: p.producto,
+  cantidad: p.cantidad,
+  subtotal: p.subtotal
+}));
+
 
       document.getElementById("contenido").innerHTML = `
         <h2>Boleta #${v.id_venta}</h2>
@@ -918,6 +926,7 @@ function generarBoletaPDF(idVenta) {
       }
 
       const venta = data[0];
+      
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: "mm", format: [80, 200] });
 

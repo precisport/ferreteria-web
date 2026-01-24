@@ -160,12 +160,14 @@ app.post("/crear-venta", async (req, res) => {
 
 for (const p of productos) {
   await db.query(
-    "INSERT INTO detalle_venta (id_venta,id_producto,cantidad,precio) VALUES (?,?,?,?)",
+    `INSERT INTO detalle_venta
+     (id_venta, id_producto, cantidad, subtotal)
+     VALUES (?, ?, ?, ?)`,
     [
-      Number(venta.insertId),
-      Number(p.id_producto),
-      Number(p.cantidad),
-      Number(p.precio)
+      venta.insertId,
+      p.id_producto,
+      p.cantidad,
+      p.cantidad * p.precio
     ]
   );
 }
