@@ -192,8 +192,22 @@ app.get("/ventas", async (req, res) => {
 
 app.get("/venta/:id", async (req, res) => {
   const [rows] = await db.query(`
-    SELECT v.*, p.nombre AS producto,
-           dv.cantidad, (dv.cantidad * dv.precio) AS subtotal
+    SELECT 
+      v.id_venta,
+      v.fecha,
+      v.total,
+
+      d.nombre   AS d_nombre,
+      d.apellido AS d_apellido,
+      d.direccion,
+      d.comuna,
+      d.numero,
+      d.telefono,
+
+      p.nombre   AS producto,
+      dv.cantidad,
+      (dv.cantidad * dv.precio) AS subtotal
+
     FROM venta v
     JOIN detalle_venta dv ON v.id_venta = dv.id_venta
     JOIN producto p ON dv.id_producto = p.id_producto
@@ -202,13 +216,6 @@ app.get("/venta/:id", async (req, res) => {
   `, [req.params.id]);
 
   res.json(rows);
-});
-
-app.delete("/eliminar-venta/:id", async (req, res) => {
-  await db.query("DELETE FROM despacho WHERE id_venta=?", [req.params.id]);
-  await db.query("DELETE FROM detalle_venta WHERE id_venta=?", [req.params.id]);
-  await db.query("DELETE FROM venta WHERE id_venta=?", [req.params.id]);
-  res.json({ ok: true });
 });
 
 /* ===============================
