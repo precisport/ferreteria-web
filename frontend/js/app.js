@@ -462,7 +462,9 @@ if (!dNombre.value || !dDireccion.value || !dComuna.value) {
     telefono: dTelefono.value.trim() || ""
   };
 
-  const total = carrito.reduce((a, p) => a + p.precio * p.cantidad, 0);
+const subtotal = carrito.reduce((a, p) => a + p.precio * p.cantidad, 0);
+const iva = Math.round(subtotal * 0.19);
+const total = subtotal + iva;
 
   fetch(`${API_URL}/crear-venta`, {
     method: "POST",
@@ -471,9 +473,9 @@ if (!dNombre.value || !dDireccion.value || !dComuna.value) {
       id_usuario: usuarioActivo.id_usuario,
       total,
       productos: carrito.map(p => ({
-        id_producto: p.id_producto,
-        cantidad: p.cantidad,
-        precio: p.precio
+  id_producto: p.id_producto,
+  cantidad: p.cantidad,
+  subtotal: p.precio * p.cantidad
       })),
       despacho
     })
@@ -975,3 +977,6 @@ function generarBoletaPDF(idVenta) {
       alert("Error generando PDF");
     });
 }
+
+
+  

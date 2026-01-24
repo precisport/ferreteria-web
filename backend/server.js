@@ -168,11 +168,15 @@ for (const p of productos) {
   }
 
   await db.query(
-    `INSERT INTO detalle_venta 
-     (id_venta, id_producto, cantidad, precio)
-     VALUES (?,?,?,?)`,
-    [venta.insertId, p.id_producto, p.cantidad, p.precio]
-  );
+  `INSERT INTO detalle_venta (id_venta, id_producto, cantidad, subtotal)
+   VALUES (?,?,?,?)`,
+  [
+    venta.insertId,
+    p.id_producto,
+    p.cantidad,
+    p.subtotal
+  ]
+);
 }
 
 
@@ -235,12 +239,18 @@ app.get("/venta/:id", async (req, res) => {
 
         p.nombre   AS producto,
         dv.cantidad,
-        (dv.cantidad * dv.precio) AS subtotal
-      FROM venta v
-      JOIN detalle_venta dv ON v.id_venta = dv.id_venta
-      JOIN producto p ON dv.id_producto = p.id_producto
-      LEFT JOIN despacho d ON v.id_venta = d.id_venta
-      WHERE v.id_venta = ?
+dv.subtotal AS subtotal
+      SELECT
+  ...
+  p.nombre AS producto,
+  dv.cantidad,
+  dv.subtotal
+FROM venta v
+JOIN detalle_venta dv ON v.id_venta = dv.id_venta
+JOIN producto p ON dv.id_producto = p.id_producto
+LEFT JOIN despacho d ON v.id_venta = d.id_venta
+WHERE v.id_venta = ?
+
     `, [req.params.id]);
 
     res.json(rows);
