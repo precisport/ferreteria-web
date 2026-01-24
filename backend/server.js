@@ -159,24 +159,17 @@ app.post("/crear-venta", async (req, res) => {
     );
 
 for (const p of productos) {
-  if (
-    !p.id_producto ||
-    Number(p.cantidad) <= 0 ||
-    Number(p.precio) <= 0
-  ) {
-    throw new Error("Producto inválido en la venta");
-  }
-
   await db.query(
-  `INSERT INTO detalle_venta (id_venta, id_producto, cantidad, subtotal)
-   VALUES (?,?,?,?)`,
-  [
-    venta.insertId,
-    p.id_producto,
-    p.cantidad,
-    p.subtotal
-  ]
-);
+    `INSERT INTO detalle_venta 
+     (id_venta, id_producto, cantidad, subtotal)
+     VALUES (?, ?, ?, ?)`,
+    [
+      venta.insertId,
+      p.id_producto,
+      p.cantidad,
+      p.cantidad * p.precio
+    ]
+  );
 }
 
 
@@ -239,18 +232,12 @@ app.get("/venta/:id", async (req, res) => {
 
         p.nombre   AS producto,
         dv.cantidad,
-dv.subtotal AS subtotal
-      SELECT
-  ...
-  p.nombre AS producto,
-  dv.cantidad,
-  dv.subtotal
-FROM venta v
-JOIN detalle_venta dv ON v.id_venta = dv.id_venta
-JOIN producto p ON dv.id_producto = p.id_producto
-LEFT JOIN despacho d ON v.id_venta = d.id_venta
-WHERE v.id_venta = ?
-
+        dv.subtotal
+      FROM venta v
+      JOIN detalle_venta dv ON v.id_venta = dv.id_venta
+      JOIN producto p ON dv.id_producto = p.id_producto
+      LEFT JOIN despacho d ON v.id_venta = d.id_venta
+      WHERE v.id_venta = ?
     `, [req.params.id]);
 
     res.json(rows);
@@ -259,6 +246,7 @@ WHERE v.id_venta = ?
     res.status(500).json([]);
   }
 });
+
 
 /* ===============================
    ELIMINAR VENTA

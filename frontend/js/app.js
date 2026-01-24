@@ -979,4 +979,3 @@ function generarBoletaPDF(idVenta) {
 }
 
 
-  
