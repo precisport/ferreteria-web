@@ -415,19 +415,23 @@ function finalizarCompra() {
     return;
   }
 
-  // ✅ VALIDACIÓN OBLIGATORIA
-  if (!dNombre.value || !dDireccion.value || !dComuna.value) {
+  // 🔴 VALIDACIÓN REAL
+  if (
+    !dNombre.value.trim() ||
+    !dDireccion.value.trim() ||
+    !dComuna.value.trim()
+  ) {
     alert("Debe completar los datos de despacho");
     return;
   }
 
   const despacho = {
-    nombre: dNombre.value,
-    apellido: dApellido.value || "",
-    direccion: dDireccion.value,
-    comuna: dComuna.value,
-    numero: dNumero.value || "",
-    telefono: dTelefono.value || ""
+    nombre: dNombre.value.trim(),
+    apellido: dApellido.value.trim() || "",
+    direccion: dDireccion.value.trim(),
+    comuna: dComuna.value.trim(),
+    numero: dNumero.value.trim() || "",
+    telefono: dTelefono.value.trim() || ""
   };
 
   const total = carrito.reduce((a, p) => a + p.precio * p.cantidad, 0);
@@ -457,7 +461,6 @@ function finalizarCompra() {
       alert("Error al realizar la compra");
     });
 }
-
 
 /************ BOLETA ************/
 function verBoleta(id) {
