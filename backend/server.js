@@ -142,9 +142,14 @@ app.post("/crear-venta", async (req, res) => {
   try {
     const { id_usuario, total, productos, despacho } = req.body;
 
-    if (!id_usuario || !total || !Array.isArray(productos)) {
-      return res.status(400).json({ error: "Datos incompletos" });
-    }
+    if (
+  !id_usuario ||
+  !total ||
+  !Array.isArray(productos) ||
+  productos.length === 0
+) {
+  return res.status(400).json({ error: "Datos incompletos" });
+}
 
 
 
@@ -153,7 +158,7 @@ app.post("/crear-venta", async (req, res) => {
       [id_usuario, total]
     );
 
-    for (const p of productos) {
+for (const p of productos) {
   if (!p.id_producto || !p.cantidad || !p.precio) {
     console.error("❌ Producto inválido:", p);
     continue;

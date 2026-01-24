@@ -225,6 +225,7 @@ function agregarCarrito(id) {
   actualizarContador();
 }
 
+
 /************ ADMIN: AGREGAR PRODUCTO ************/
 function mostrarAdminProductos() {
 fetch(`${API_URL}/categorias`)
