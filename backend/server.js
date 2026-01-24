@@ -218,32 +218,38 @@ app.get("/ventas", async (req, res) => {
 app.get("/venta/:id", async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT 
-        v.id_venta,
-        v.fecha,
-        v.total,
-
-        d.nombre   AS d_nombre,
-        d.apellido AS d_apellido,
-        d.direccion,
-        d.comuna,
-        d.numero,
-        d.telefono,
-
-        p.nombre   AS producto,
-        dv.cantidad,
-        dv.subtotal
+      SELECT v.id_venta, v.fecha, v.total, v.id_usuario,
+             u.nombre AS cliente,
+             p.nombre AS producto, dv.cantidad, dv.subtotal
       FROM venta v
-      JOIN detalle_venta dv ON v.id_venta = dv.id_venta
-      JOIN producto p ON dv.id_producto = p.id_producto
-      LEFT JOIN despacho d ON v.id_venta = d.id_venta
+      LEFT JOIN usuario u ON v.id_usuario = u.id_usuario
+      LEFT JOIN detalle_venta dv ON v.id_venta = dv.id_venta
+      LEFT JOIN producto p ON dv.id_producto = p.id_producto
       WHERE v.id_venta = ?
     `, [req.params.id]);
 
-    res.json(rows);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Venta no encontrada" });
+    }
+
+    // Obtener despacho por separado si existe
+    let despacho = null;
+    try {
+      const [despachoRows] = await db.query("SELECT * FROM despacho WHERE id_venta = ?", [req.params.id]);
+      if (despachoRows.length > 0) {
+        despacho = despachoRows[0];
+      }
+    } catch (err) {
+      console.log("Tabla despacho no existe o error:", err.message);
+    }
+
+    // Agregar despacho a cada fila
+    const result = rows.map(row => ({ ...row, ...despacho }));
+
+    res.json(result);
   } catch (err) {
-    console.error("❌ Error /venta/:id", err);
-    res.status(500).json([]);
+    console.error("❌ Error obteniendo venta:", err);
+    res.status(500).json({ error: "Error interno" });
   }
 });
 
