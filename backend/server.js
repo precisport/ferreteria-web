@@ -227,8 +227,8 @@ app.get("/venta/:id", async (req, res) => {
         dv.cantidad,
         dv.subtotal
       FROM venta v
-      LEFT JOIN detalle_venta dv ON v.id_venta = dv.id_venta
-      LEFT JOIN producto p ON dv.id_producto = p.id_producto
+      JOIN detalle_venta dv ON v.id_venta = dv.id_venta
+      JOIN producto p ON dv.id_producto = p.id_producto
       WHERE v.id_venta = ?
     `, [req.params.id]);
 
