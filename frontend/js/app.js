@@ -415,12 +415,6 @@ function finalizarCompra() {
     return;
   }
 
-  // 🔴 VALIDACIÓN DE DESPACHO (AQUÍ)
-  if (!dNombre.value || !dDireccion.value || !dComuna.value) {
-    alert("Debe completar los datos de despacho");
-    return;
-  }
-
   const despacho = {
     nombre: dNombre.value,
     apellido: dApellido.value,
@@ -432,7 +426,7 @@ function finalizarCompra() {
 
   const total = carrito.reduce((a, p) => a + p.precio * p.cantidad, 0);
 
-  fetch(`${API_URL}/crear-venta`, {
+fetch(`${API_URL}/crear-venta`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
