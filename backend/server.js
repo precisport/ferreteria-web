@@ -159,13 +159,18 @@ app.post("/crear-venta", async (req, res) => {
     );
 
 for (const p of productos) {
-  if (!p.id_producto || !p.cantidad || !p.precio) {
-    console.error("❌ Producto inválido:", p);
-    continue;
+  if (
+    !p.id_producto ||
+    Number(p.cantidad) <= 0 ||
+    Number(p.precio) <= 0
+  ) {
+    throw new Error("Producto inválido en la venta");
   }
 
   await db.query(
-    "INSERT INTO detalle_venta (id_venta,id_producto,cantidad,precio) VALUES (?,?,?,?)",
+    `INSERT INTO detalle_venta 
+     (id_venta, id_producto, cantidad, precio)
+     VALUES (?,?,?,?)`,
     [venta.insertId, p.id_producto, p.cantidad, p.precio]
   );
 }

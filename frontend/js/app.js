@@ -214,13 +214,14 @@ function agregarCarrito(id) {
   if (existe) {
     existe.cantidad++;
   } else {
-    carrito.push({
-      id_producto: prod.id_producto,
-      nombre: prod.nombre,
-      precio: Number(prod.precio),
-      cantidad: 1
-    });
-  }
+  carrito.push({
+  id_producto: prod.id_producto,
+  nombre: prod.nombre,
+  precio: Number(prod.precio),
+  cantidad: 1,
+  imagen: prod.imagen
+});
+
 
   actualizarContador();
 }
