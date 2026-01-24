@@ -875,62 +875,63 @@ function generarBoletaPDF(idVenta) {
         return;
       }
 
-      const venta = data[0]; // 👈 acá viene el despacho
-
+      const venta = data[0];
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({
-        unit: "mm",
-        format: [80, 220]
-      });
+      const doc = new jsPDF({ unit: "mm", format: [80, 200] });
 
       let y = 10;
 
+      /* ===== HEADER ===== */
       doc.setFontSize(10);
-      doc.text("FERRETERÍA WEB SPA", 40, y, { align: "center" });
-      y += 5;
-      doc.text("VÁLIDO COMO BOLETA", 40, y, { align: "center" });
-      y += 6;
+      doc.text("FERRETERÍA WEB SPA", 40, y, { align: "center" }); y += 5;
+      doc.text("VÁLIDO COMO BOLETA", 40, y, { align: "center" }); y += 6;
 
       doc.setFontSize(8);
-      doc.text(`Boleta N°: ${venta.id_venta}`, 5, y); y += 4;
-      doc.text(`Fecha: ${new Date(venta.fecha).toLocaleString()}`, 5, y); y += 5;
+      doc.text(`Boleta N°: ${venta.id_venta}`, 10, y); y += 4;
+      doc.text(`Fecha: ${new Date(venta.fecha).toLocaleString()}`, 10, y); y += 5;
 
-      doc.text("---------------------------------------", 40, y, { align: "center" });
+      doc.text("------------------------------------------", 40, y, { align: "center" });
       y += 5;
 
+      /* ===== DETALLE ===== */
       data.forEach(p => {
-        doc.text(
-          `${p.producto} x${p.cantidad}  $${Number(p.subtotal).toLocaleString()}`,
-          5,
-          y
-        );
+        doc.text(`${p.producto} x${p.cantidad}`, 10, y);
+        doc.text(`$${Number(p.subtotal).toLocaleString()}`, 70, y, { align: "right" });
         y += 4;
       });
 
-      y += 3;
-      doc.text("---------------------------------------", 40, y, { align: "center" });
+      doc.text("------------------------------------------", 40, y, { align: "center" });
       y += 5;
 
-      doc.text(`TOTAL: $${Number(venta.total).toLocaleString()}`, 5, y);
-      y += 6;
+      /* ===== TOTALES ===== */
+      const total = Number(venta.total);
+      const iva = Math.round(total * 0.19 / 1.19);
+      const neto = total - iva;
 
-      // 🚚 DESPACHO (AHORA SÍ APARECE)
-      if (venta.direccion) {
-        doc.text("---------------------------------------", 40, y, { align: "center" });
-        y += 5;
-        doc.text("DESPACHO", 40, y, { align: "center" });
+      doc.text(`NETO: $${neto.toLocaleString()}`, 10, y); y += 4;
+      doc.text(`IVA (19%): $${iva.toLocaleString()}`, 10, y); y += 4;
+      doc.text(`TOTAL: $${total.toLocaleString()}`, 10, y); y += 6;
+
+      /* ===== DESPACHO ===== */
+      if (venta.d_nombre) {
+        doc.text("------------------------------------------", 40, y, { align: "center" });
         y += 5;
 
-        doc.text(`${venta.nombre} ${venta.apellido}`, 5, y); y += 4;
-        doc.text(venta.direccion, 5, y); y += 4;
-        doc.text(`${venta.comuna} Nº ${venta.numero}`, 5, y); y += 4;
-        doc.text(`Tel: ${venta.telefono}`, 5, y);
+        doc.text("DESPACHO", 40, y, { align: "center" }); y += 5;
+        doc.text(`${venta.d_nombre} ${venta.d_apellido}`, 10, y); y += 4;
+        doc.text(venta.direccion, 10, y); y += 4;
+        doc.text(`${venta.comuna} Nº ${venta.numero}`, 10, y); y += 4;
+        doc.text(`Tel: ${venta.telefono}`, 10, y); y += 5;
       }
 
-      doc.save(`boleta-${venta.id_venta}.pdf`);
+      doc.text("------------------------------------------", 40, y, { align: "center" });
+      y += 4;
+      doc.text("GRACIAS POR SU COMPRA", 40, y, { align: "center" });
+
+      doc.save(`boleta_${venta.id_venta}.pdf`);
     })
     .catch(err => {
-      console.error("❌ Error PDF:", err);
+      console.error(err);
       alert("Error generando PDF");
     });
 }
