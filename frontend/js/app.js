@@ -410,8 +410,15 @@ function mostrarDespacho() {
 }
 
 function finalizarCompra() {
+
   if (!usuarioActivo || carrito.length === 0) {
     alert("Debe iniciar sesión");
+    return;
+  }
+
+  // 🔴 VALIDACIÓN CLAVE
+  if (!dNombre.value || !dDireccion.value || !dComuna.value) {
+    alert("Debe completar los datos de despacho");
     return;
   }
 
@@ -426,7 +433,7 @@ function finalizarCompra() {
 
   const total = carrito.reduce((a, p) => a + p.precio * p.cantidad, 0);
 
-fetch(`${API_URL}/crear-venta`, {
+  fetch(`${API_URL}/crear-venta`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -859,38 +866,25 @@ document.getElementById("contadorCarrito").innerText = totalItems;
 }
 
 function generarBoletaPDF(idVenta) {
-  fetch(`${API_URL}/ventas`)
+  fetch(`${API_URL}/venta/${idVenta}`)
     .then(res => res.json())
     .then(data => {
 
-      console.log("📦 Ventas recibidas:", data);
-
-      if (!Array.isArray(data)) {
-        alert("Error obteniendo ventas");
+      if (!Array.isArray(data) || data.length === 0) {
+        alert("No hay datos para esta boleta");
         return;
       }
 
-      const venta = data.find(v => v.id_venta === idVenta);
-
-      if (!venta) {
-        alert("Boleta no encontrada");
-        return;
-      }
-
-      if (!window.jspdf || !window.jspdf.jsPDF) {
-        alert("jsPDF no está cargado");
-        return;
-      }
+      const venta = data[0]; // 👈 acá viene el despacho
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({
         unit: "mm",
-        format: [80, 200]
+        format: [80, 220]
       });
 
       let y = 10;
 
-      /* ===== HEADER ===== */
       doc.setFontSize(10);
       doc.text("FERRETERÍA WEB SPA", 40, y, { align: "center" });
       y += 5;
@@ -898,35 +892,42 @@ function generarBoletaPDF(idVenta) {
       y += 6;
 
       doc.setFontSize(8);
-      doc.text("------------------------------------------", 40, y, { align: "center" });
+      doc.text(`Boleta N°: ${venta.id_venta}`, 5, y); y += 4;
+      doc.text(`Fecha: ${new Date(venta.fecha).toLocaleString()}`, 5, y); y += 5;
+
+      doc.text("---------------------------------------", 40, y, { align: "center" });
       y += 5;
 
-      doc.text(`Boleta N°: ${venta.id_venta}`, 10, y); y += 4;
-      doc.text(`Fecha: ${new Date(venta.fecha).toLocaleString()}`, 10, y); y += 4;
-      doc.text(`Cliente ID: ${venta.id_cliente ?? "N/A"}`, 10, y); y += 5;
+      data.forEach(p => {
+        doc.text(
+          `${p.producto} x${p.cantidad}  $${Number(p.subtotal).toLocaleString()}`,
+          5,
+          y
+        );
+        y += 4;
+      });
 
-      doc.text("------------------------------------------", 40, y, { align: "center" });
+      y += 3;
+      doc.text("---------------------------------------", 40, y, { align: "center" });
       y += 5;
 
-      /* ===== TOTAL ===== */
-      const total = Number(venta.total);
-      const iva = Math.round(total * 0.19 / 1.19);
-      const neto = total - iva;
-
-      doc.text(`NETO: $${neto.toLocaleString()}`, 10, y); y += 4;
-      doc.text(`IVA (19%): $${iva.toLocaleString()}`, 10, y); y += 4;
-
-      doc.setFontSize(9);
-      doc.text(`TOTAL: $${total.toLocaleString()}`, 10, y);
+      doc.text(`TOTAL: $${Number(venta.total).toLocaleString()}`, 5, y);
       y += 6;
 
-      doc.text("------------------------------------------", 40, y, { align: "center" });
-      y += 5;
+      // 🚚 DESPACHO (AHORA SÍ APARECE)
+      if (venta.direccion) {
+        doc.text("---------------------------------------", 40, y, { align: "center" });
+        y += 5;
+        doc.text("DESPACHO", 40, y, { align: "center" });
+        y += 5;
 
-      doc.setFontSize(8);
-      doc.text("GRACIAS POR SU COMPRA", 40, y, { align: "center" });
+        doc.text(`${venta.nombre} ${venta.apellido}`, 5, y); y += 4;
+        doc.text(venta.direccion, 5, y); y += 4;
+        doc.text(`${venta.comuna} Nº ${venta.numero}`, 5, y); y += 4;
+        doc.text(`Tel: ${venta.telefono}`, 5, y);
+      }
 
-      doc.save(`boleta_${venta.id_venta}.pdf`);
+      doc.save(`boleta-${venta.id_venta}.pdf`);
     })
     .catch(err => {
       console.error("❌ Error PDF:", err);

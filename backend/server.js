@@ -154,22 +154,23 @@ app.post("/crear-venta", async (req, res) => {
       );
     }
 
-    if (despacho) {
-      await db.query(
-        `INSERT INTO despacho 
-        (id_venta,nombre,apellido,direccion,comuna,numero,telefono)
-        VALUES (?,?,?,?,?,?,?)`,
-        [
-          venta.insertId,
-          despacho.nombre,
-          despacho.apellido,
-          despacho.direccion,
-          despacho.comuna,
-          despacho.numero,
-          despacho.telefono
-        ]
-      );
-    }
+if (despacho) {
+  await db.query(
+    `INSERT INTO despacho 
+     (id_venta,nombre,apellido,direccion,comuna,numero,telefono)
+     VALUES (?,?,?,?,?,?,?)`,
+    [
+      venta.insertId,
+      despacho.nombre,
+      despacho.apellido,
+      despacho.direccion,
+      despacho.comuna,
+      despacho.numero,
+      despacho.telefono
+    ]
+  );
+}
+
 
     res.json({ id_venta: venta.insertId });
   } catch (err) {
