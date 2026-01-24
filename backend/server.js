@@ -146,17 +146,25 @@ app.post("/crear-venta", async (req, res) => {
       return res.status(400).json({ error: "Datos incompletos" });
     }
 
+
+
     const [venta] = await db.query(
       "INSERT INTO venta (id_cliente,total) VALUES (?,?)",
       [id_usuario, total]
     );
 
     for (const p of productos) {
-      await db.query(
-        "INSERT INTO detalle_venta (id_venta,id_producto,cantidad,precio) VALUES (?,?,?,?)",
-        [venta.insertId, p.id_producto, p.cantidad, p.precio]
-      );
-    }
+  if (!p.id_producto || !p.cantidad || !p.precio) {
+    console.error("❌ Producto inválido:", p);
+    continue;
+  }
+
+  await db.query(
+    "INSERT INTO detalle_venta (id_venta,id_producto,cantidad,precio) VALUES (?,?,?,?)",
+    [venta.insertId, p.id_producto, p.cantidad, p.precio]
+  );
+}
+
 
     // ✅ DESPACHO OBLIGATORIO
     if (
@@ -249,6 +257,8 @@ app.delete("/eliminar-venta/:id", async (req, res) => {
     res.status(500).json({ ok: false });
   }
 });
+
+
 
 
 /* ===============================

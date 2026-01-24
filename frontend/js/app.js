@@ -202,11 +202,25 @@ function mostrarProductos() {
 
 
 function agregarCarrito(id) {
-  const prod = productos.find(p => p.id_producto === id);
-  const existe = carrito.find(p => p.id_producto === id);
+  const prod = productos.find(p => Number(p.id_producto) === Number(id));
 
-  if (existe) existe.cantidad++;
-  else carrito.push({ ...prod, cantidad: 1 });
+  if (!prod) {
+    alert("Producto no encontrado");
+    return;
+  }
+
+  const existe = carrito.find(p => p.id_producto === prod.id_producto);
+
+  if (existe) {
+    existe.cantidad++;
+  } else {
+    carrito.push({
+      id_producto: prod.id_producto,
+      nombre: prod.nombre,
+      precio: Number(prod.precio),
+      cantidad: 1
+    });
+  }
 
   actualizarContador();
 }
@@ -359,7 +373,7 @@ const total = subtotal + iva;
     <h2>Carrito</h2>
     ${carrito.map(p => `
       <div class="carrito-item">
-<img src="${p.imagen || 'https://via.placeholder.com/100'}">
+<img src="https://via.placeholder.com/100">
 
         <div>
           <strong>${p.nombre}</strong><br>
@@ -415,6 +429,19 @@ function finalizarCompra() {
     return;
   }
 
+  console.log("🛒 Carrito:", carrito);
+
+if (carrito.length === 0) {
+  alert("El carrito está vacío");
+  return;
+}
+
+if (!dNombre.value || !dDireccion.value || !dComuna.value) {
+  alert("Debe completar los datos de despacho");
+  return;
+}
+
+
   // 🔴 VALIDACIÓN REAL
   if (
     !dNombre.value.trim() ||
@@ -464,15 +491,21 @@ function finalizarCompra() {
 
 /************ BOLETA ************/
 function verBoleta(id) {
-fetch(`${API_URL}/ventas`)
-    .then(r => r.json())
+  fetch(`${API_URL}/venta/${id}`)
+    .then(res => res.json())
     .then(data => {
-      const v = data.find(x => x.id_venta === id);
+
+      if (!Array.isArray(data) || data.length === 0) {
+        alert("No hay datos para esta boleta");
+        return;
+      }
+
+      const v = data[0];
 
       document.getElementById("contenido").innerHTML = `
         <h2>Boleta #${v.id_venta}</h2>
-        <p>Fecha: ${v.fecha}</p>
-        <p>Total: $${v.total.toLocaleString()}</p>
+        <p>Fecha: ${new Date(v.fecha).toLocaleString()}</p>
+        <p>Total: $${Number(v.total).toLocaleString()}</p>
 
         ${v.direccion ? `
           <h3>Despacho</h3>
